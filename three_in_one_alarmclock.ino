@@ -8,12 +8,16 @@ RTC_DS3231 rtc;
 bool century = false;
 dht11 DHT11;
 const int DHT11PIN = 6;
-const int buttonPin = 7;
+const int buttonPin = 8;
 
-int counter;
-int buttonState = 0;
+int buttonState = LOW;
+int ledState = -1;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 100;
+int counter = 0;
 
 void setup() {
+  Serial.begin(9600);
   lcd.begin(16, 2);
   if (!rtc.begin()){
     lcd.print("Couldn't Find RTC");
@@ -23,23 +27,37 @@ void setup() {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
   pinMode(buttonPin, INPUT);
-  counter = 0;
 }
 
 void loop() {
+   //sample the state of the button - is it pressed or not?
   buttonState = digitalRead(buttonPin);
-  delay(100);
-  if (buttonState == HIGH){
-    counter++;
-  }
+
+  //filter out any noise by setting a time buffer
+  if ( (millis() - lastDebounceTime) > debounceDelay) {
+
+    //if the button has been pressed, lets toggle the LED from "off to on" or "on to off"
+    if ((buttonState == HIGH) && (ledState<0)) {
+      counter++;
+      lastDebounceTime = millis(); //set the current time
+    }
+    else if (buttonState==HIGH && ledState>0){
+      ledState = -ledState;
+      lastDebounceTime = millis();
+    }
+  }//close if(time buffer)
+  Serial.println(counter);
   if (counter%3==0){
   showHumidity();
+  debounceDelay = 200;
   }
   else if (counter%3==1){
     showTemp();
+    debounceDelay = 200;
   }
   else if (counter%3==2){
     showTime();
+    debounceDelay = 200;
   }
 }
 
@@ -62,7 +80,7 @@ void showTime(){
     lcd.print("0");
   }
   lcd.print(now.second(), DEC);
-  delay(1000);
+  delay(5);
 }
 
 void showTemp(){
@@ -71,8 +89,7 @@ void showTemp(){
   lcd.print("Temperature: ");
   lcd.setCursor(0, 1);
   lcd.print((float) DHT11.temperature, 2);
-  lcd.print(" C");
-  delay(2000);  
+  lcd.print(" C"); 
 }
 
 void showHumidity(){
@@ -82,6 +99,4 @@ void showHumidity(){
   lcd.setCursor(0, 1);
   lcd.print((float) DHT11.humidity, 2);
   lcd.print("%");
-  delay(2000);
 }
-
