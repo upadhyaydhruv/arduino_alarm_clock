@@ -1,6 +1,6 @@
-#include <LiquidCrystal.h>;
-#include <Wire.h>;
-#include "RTClib.h";
+#include <LiquidCrystal.h>
+#include <Wire.h>
+#include "RTClib.h"
 #include <dht11.h>
 #include <IRremote.h>
 
@@ -22,6 +22,8 @@ unsigned long debounceDelay = 100;
 int counter = 0;
 int hour = 0;
 int minute = 0;
+int times[3] = {0, 0, 0};
+boolean alarmPlaying = false;
 
 void setup() {
   Serial.begin(9600);
@@ -41,6 +43,8 @@ void setup() {
 
 void loop() {
    //sample the state of the button - is it pressed or not?
+
+  updateTime();
   playAlarm();
   buttonState = digitalRead(buttonPin);
 
@@ -77,25 +81,30 @@ void loop() {
   }
 }
 
+void updateTime() {
+  DateTime now = rtc.now();
+  times[0] = now.hour();
+  times[1] = now.minute();
+  times[2] = now.second();
+}
 void showTime(){
   lcd.clear();
   lcd.print("Current Time: ");
   lcd.setCursor(0, 1);
-  DateTime now = rtc.now();
-  if (now.hour()<10){
+  if (times[0]<10){
     lcd.print("0");
   }
-  lcd.print(now.hour());
+  lcd.print(times[0]);
   lcd.print(":");
-  if (now.minute()<10){
+  if (times[1]<10){
     lcd.print("0");
   }
-  lcd.print(now.minute(), DEC);
+  lcd.print(times[1], DEC);
   lcd.print(":");
-  if (now.second()<10){
+  if (times[2]<10){
     lcd.print("0");
   }
-  lcd.print(now.second(), DEC);
+  lcd.print(times[2], DEC);
   delay(5);
 }
 
@@ -202,13 +211,16 @@ void setAlarm() {
   counter+=3;
 }
 
+
 void playAlarm() {
-  DateTime now = rtc.now();
-  if (now.hour()==hour && now.minute()==minute){
+  if(times[0]==hour && times[1]==minute){
+    alarmPlaying = true;   
+  }
+  if (alarmPlaying){
     tone(buzzerPin, 1000); // Send 1KHz sound signal...
     delay(1000);        // ...for 1 sec
     noTone(buzzerPin);     // Stop sound...
-    delay(1000);        // ...for 1sec    
+    delay(1000);        // ...for 1sec 
   }
 }
 
