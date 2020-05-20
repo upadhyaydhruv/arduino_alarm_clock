@@ -27,6 +27,35 @@ boolean alarmPlaying = false;
 
 void setup() {
   Serial.begin(9600);
+#include <LiquidCrystal.h>
+#include <Wire.h>
+#include "RTClib.h"
+#include <dht11.h>
+#include <IRremote.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+RTC_DS3231 rtc;
+bool century = false;
+dht11 DHT11;
+const int DHT11PIN = 6;
+const int buzzerPin = 7;
+const int buttonPin = 8;
+const int RECV_PIN = 9;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+int buttonState = LOW;
+int ledState = -1;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 100;
+int counter = 0;
+int hour = 0;
+int minute = 0;
+int times[3] = {0, 0, 0};
+boolean alarmPlaying = false;
+
+void setup() {
+  Serial.begin(9600);
   irrecv.enableIRIn();
   irrecv.blink13(true);
   lcd.begin(16, 2);
@@ -217,10 +246,31 @@ void playAlarm() {
     alarmPlaying = true;   
   }
   if (alarmPlaying){
-    tone(buzzerPin, 1000); // Send 1KHz sound signal...
-    delay(1000);        // ...for 1 sec
-    noTone(buzzerPin);     // Stop sound...
-    delay(1000);        // ...for 1sec 
+    lcd.clear();
+    lcd.print("WAKE UP");
+    tone(buzzerPin, 1000); 
+    delay(1000);        
+    noTone(buzzerPin);     
+    delay(1000);         
+
+    if (irrecv.decode(&results)) {
+      int value = results.value;
+      if (value == 14535){
+        alarmPlaying = false;
+        break;
+      }
+      else if (value == 6375){
+        if (minute<55){
+          minute+=5;
+        }
+        else{
+          hour++;
+          minute = 5 - (60-minute);
+        }
+        alarmPlaying = false;
+        break;
+      }
+    }
   }
 }
 
