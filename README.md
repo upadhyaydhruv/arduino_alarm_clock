@@ -1,5 +1,5 @@
 # arduino_alarm_clock
 A repository that uses numerous modules to implement an arduino-based alarm clock with various other functions
 
-![alt text](https://github.com/upadhyaydhruv/arduino_alarm_clock/blob/alarm_clock_station_schematic_bb.png?raw=true)
+![alt text]alarm_clock_station_schematic_bb.png
 
